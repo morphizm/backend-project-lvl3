@@ -8,11 +8,7 @@
   },
   "scripts": {
     "test": "jest",
-    "build-server": "babel server --out-dir dist --source-maps inline && cp -r server/views dist/views",
-    "build-app": "npx webpack -p --env production",
-    "build": "npm run build-app && npm run build-server",
-    "start": "dist/bin/slack.js",
-    "postinstall": "npm run build"
+    "build": "babel srs --out-dir dist --source-maps inline"
   },
   "repository": {
     "type": "git",
@@ -42,7 +38,6 @@
     "eslint": "^6.8.0",
     "eslint-config-airbnb": "^18.0.1",
     "eslint-config-airbnb-base": "^14.0.0",
-    "eslint-import-resolver-webpack": "^0.12.1",
     "eslint-plugin-babel": "^5.3.0",
     "eslint-plugin-import": "^2.20.1",
     "eslint-plugin-jest": "^23.6.0",
