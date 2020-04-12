@@ -1,9 +1,15 @@
-import fs from 'fs';
+import axios from 'axios';
+import _ from 'lodash';
+import { promises as fs } from 'fs';
 
 const pageLoader = (pageUrl, outputDirectory = process.cwd()) => {
-  console.log(pageUrl, outputDirectory);
-  console.log(`cure ${process.cwd()}`);
-  fs.appendFileSync(`${outputDirectory}/tt.html`, '<aLALLA</a>', 'utf-8')
+  const urlWithoutHttp = _.replace(pageUrl, /http:\/\/|https:\/\//, '');
+  const dashedUrl = _.replace(urlWithoutHttp, /[^A-Za-z\d]/g, '-');
+
+  axios.get(pageUrl)
+    .then(() => {
+      fs.appendFile(`${outputDirectory}/${dashedUrl}.html`, '', 'utf-8');
+    });
 };
 
 export default pageLoader;
