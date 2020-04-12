@@ -10,12 +10,13 @@ program
   .option('--output <directory>', 'Output directory')
   .arguments('<pageUrl>')
   .action((pageUrl) => {
-    console.log(pageLoader(pageUrl, program.output));
-    process.exit(0);
+    pageLoader(pageUrl, program.output)
+      .then(() => {
+        process.exit(0);
+      })
+      .catch(() => {
+        process.exit(1);
+      });
   });
 
 program.parse(process.argv);
-
-if (program.format) {
-  console.log('json, plain, text');
-}

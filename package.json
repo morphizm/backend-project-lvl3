@@ -1,6 +1,6 @@
 {
-  "name": "morphizm-back-3",
-  "version": "0.0.1",
+  "name": "morphizm-page-loader",
+  "version": "0.0.2",
   "description": "page loader for load any page from web",
   "main": "dist/index.js",
   "bin": {
@@ -30,12 +30,6 @@
   },
   "homepage": "https://github.com/morphizm/backend-project-lvl3#readme",
   "dependencies": {
-    "@babel/cli": "^7.8.4",
-    "@babel/core": "^7.8.4",
-    "@babel/node": "^7.8.4",
-    "@babel/preset-env": "^7.8.4",
-    "@babel/plugin-proposal-class-properties": "^7.8.3",
-    "@babel/plugin-proposal-decorators": "^7.8.3",
     "axios": "^0.19.2",
     "commander": "^5.0.0",
     "fs": "0.0.1-security",
@@ -43,7 +37,12 @@
     "path": "^0.12.7"
   },
   "devDependencies": {
-    "@babel/preset-env": "^7.6.0",
+    "@babel/cli": "^7.8.4",
+    "@babel/core": "^7.8.4",
+    "@babel/node": "^7.8.4",
+    "@babel/preset-env": "^7.8.4",
+    "@babel/plugin-proposal-class-properties": "^7.8.3",
+    "@babel/plugin-proposal-decorators": "^7.8.3",
     "@types/jest": "^25.1.2",
     "babel-core": "^7.0.0-bridge.0",
     "babel-eslint": "^10.0.3",
