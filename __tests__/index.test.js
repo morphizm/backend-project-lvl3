@@ -39,7 +39,7 @@ describe('directory contains fileName', () => {
 
   test('url with search params', async () => {
     const { href } = new URL('http://yandex.ru/search/?lr=213&text=hexlet#hash');
-    const expectedFileName = 'yandex-ru-search--lr-213-text-hexlet-hash';
+    const expectedFileName = 'yandex-ru-search--lr-213-text-hexlet-hash.html';
 
     nock(/yandex/)
       .get(/search/)
