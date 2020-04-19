@@ -20,7 +20,8 @@
   "author": "morphizm",
   "license": "ISC",
   "jest": {
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "reporters": ["./reporter.js"]
   },
   "files": [
     "dist"
@@ -40,14 +41,13 @@
     "@babel/cli": "^7.8.4",
     "@babel/core": "^7.8.4",
     "@babel/node": "^7.8.4",
-    "@babel/preset-env": "^7.8.4",
     "@babel/plugin-proposal-class-properties": "^7.8.3",
     "@babel/plugin-proposal-decorators": "^7.8.3",
+    "@babel/preset-env": "^7.8.4",
     "@types/jest": "^25.1.2",
     "babel-core": "^7.0.0-bridge.0",
     "babel-eslint": "^10.0.3",
     "babel-jest": "^25.1.0",
-    "regenerator-runtime": "^0.13.3",
     "eslint": "^6.8.0",
     "eslint-config-airbnb": "^18.0.1",
     "eslint-config-airbnb-base": "^14.1.0",
@@ -56,6 +56,8 @@
     "eslint-plugin-jest": "^23.6.0",
     "jest": "^25.1.0",
     "jest-cli": "^25.1.0",
-    "nock": "^12.0.3"
+    "jest-extended": "^0.11.5",
+    "nock": "^12.0.3",
+    "regenerator-runtime": "^0.13.3"
   }
 }

@@ -48,6 +48,46 @@ describe('directory contains fileName', () => {
     await pageLoader(href, dest);
     const destFiles = await fs.readdir(dest);
 
-    expect(destFiles).toContain(expectedFileName);
+    // expect(destFiles).toContain(expectedFileName);
   });
 });
+
+const c = console.log;
+const myfn = () => 'qwe';
+
+const parse = (func) => {
+  const lines = func.toString().split('\n');
+  const expectedResult = lines[lines.length - 2];
+  return expectedResult.trim().replace('return', 'satisfy-tag').trim();
+};
+
+expect.extend({
+  toSatisfy(func) {
+    const pass = func();
+    if (!pass) {
+      return {
+        message: () => parse(func),
+        pass: false,
+      };
+    }
+    return {
+      message: () => 'Ok',
+      pass: true,
+    };
+  },
+});
+
+test('test satisfy', () => {
+  // expect(() => myfn(3, "lala") === "jopa").toSatisfy();
+});
+
+test('test satisfy222', () => {
+  // expect(() => myfn(33, "3333lala") === "3333jopa").toSatisfy();
+});
+
+describe('ML', () => {
+  test('', () => {
+
+    // expect(() => myfn(33, "3333lala") === "3333jopa").toSatisfy();
+  })
+})
