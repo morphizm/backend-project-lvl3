@@ -7,9 +7,7 @@ const pageLoader = (pageUrl, outputDirectory = process.cwd()) => {
   const dashedUrl = _.replace(urlWithoutHttp, /[^A-Za-z\d]/g, '-');
 
   return axios.get(pageUrl)
-    .then(() => {
-      fs.appendFile(`${outputDirectory}/${dashedUrl}.html`, '', 'utf-8');
-    });
+    .then(() => fs.appendFile(`${outputDirectory}/${dashedUrl}.html`, '', 'utf-8'));
 };
 
 export default pageLoader;

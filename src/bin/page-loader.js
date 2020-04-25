@@ -6,7 +6,7 @@ const program = new Command();
 
 program
   .version('0.0.1')
-  .description('Downoload a ...')
+  .description('Downoload files from web page')
   .option('--output <directory>', 'Output directory')
   .arguments('<pageUrl>')
   .action((pageUrl) => {
