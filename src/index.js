@@ -1,13 +1,14 @@
 import { promises as fs } from 'fs';
 import path from 'path';
+import 'axios-debug-log';
 import axios from 'axios';
+import debug from 'debug';
 import _ from 'lodash';
 import cheerio from 'cheerio';
 
-const makeUrls = (base, ...pathnames) => {
-  const flatPathnames = _.flatten(pathnames);
-  return flatPathnames.map((pathname) => new URL(pathname, base).href);
-};
+// const pageLoaderDebug = debug('page-loader:');
+
+const makeUrls = (base, ...pathnames) => pathnames.map((pathname) => new URL(pathname, base).href);
 
 let c = console.log;
 c = _.noop;
@@ -18,10 +19,10 @@ const downoloadFilesContent = (urls) => {
   return Promise.all(contents);
 };
 
-const getEncoding = (fileName) => {
+const getEncoding = (format) => {
   const utf8 = 'utf-8';
   const base64 = 'base64';
-  switch (fileName) {
+  switch (format) {
     case 'css':
       return utf8;
     case 'js':
@@ -51,8 +52,8 @@ const makeFiles = (dirpath, items) => {
 };
 
 const pageLoader = (pageUrl, outputDirectory = process.cwd()) => {
-  const urlWithoutHttp = _.replace(pageUrl, /http:\/\/|https:\/\//, '');
-  const dashedName = dashPath(urlWithoutHttp);
+  const urlWithoutProtocol = _.replace(pageUrl, /http:\/\/|https:\/\//, '');
+  const dashedName = dashPath(urlWithoutProtocol);
 
   const htmlFileName = `${dashedName}.html`;
   const contentsDirName = `${dashedName}_files`;
@@ -68,7 +69,10 @@ const pageLoader = (pageUrl, outputDirectory = process.cwd()) => {
       const scriptElementsRefs = $('script').map((i, el) => $(el).attr('src')).get();
       const imgElementsRefs = $('img').map((i, el) => $(el).attr('src')).get();
 
-      const urls = makeUrls(pageUrl, linksElementsRefs, scriptElementsRefs, imgElementsRefs);
+      const urls = makeUrls(pageUrl,
+        ...linksElementsRefs,
+        ...scriptElementsRefs,
+        ...imgElementsRefs);
 
       return fs.appendFile(outputHtmlPath, data, 'utf-8')
         .then(() => fs.mkdir(contentsDirPath))

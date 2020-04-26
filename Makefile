@@ -4,7 +4,6 @@ install:
 start:
 	npx babel-node src/bin/page-loader.js
 
-
 build:
 	rm -rf dist
 	npm run build
@@ -14,6 +13,9 @@ test:
 
 test-coverage:
 	npm test -- --coverage
+
+test-debug:
+	DEBUG=page-loader:* npm test -s
 
 lint:
 	npx eslint .

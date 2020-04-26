@@ -6,6 +6,7 @@ import { promises as fs } from 'fs';
 import _ from 'lodash';
 import pageLoader from '../src';
 
+nock.disableNetConnect();
 
 const getFixturePath = (name) => path.join(__dirname, '__fixtures__', name);
 
@@ -26,6 +27,7 @@ describe('directory contains fileName', () => {
     const expectedFileName = 'ru-hexlet-io-courses.html';
 
     nock(/hexlet/)
+      .log(console.log)
       .get(pathname)
       .reply(200);
 
@@ -40,6 +42,7 @@ describe('directory contains fileName', () => {
     const expectedFileName = 'yandex-ru-search--lr-213-text-hexlet-hash.html';
 
     nock(/yandex/)
+      .log(console.log)
       .get(/search/)
       .reply(200);
 
