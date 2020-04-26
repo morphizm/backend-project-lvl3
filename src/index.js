@@ -6,7 +6,7 @@ import debug from 'debug';
 import _ from 'lodash';
 import cheerio from 'cheerio';
 
-// const pageLoaderDebug = debug('page-loader:');
+const pageLoaderDebug = debug('page-loader:');
 
 const makeUrls = (base, ...pathnames) => pathnames.map((pathname) => new URL(pathname, base).href);
 
@@ -15,7 +15,10 @@ c = _.noop;
 c(_.noop);
 
 const downoloadFilesContent = (urls) => {
-  const contents = urls.map((url) => axios.get(url).then(({ data }) => ({ data, url })));
+  const contents = urls.map((url) => {
+    pageLoaderDebug(`GET ${url}`);
+    return axios.get(url, { responseType: 'blob' }).then(({ data }) => ({ data, url }));
+  });
   return Promise.all(contents);
 };
 
@@ -46,6 +49,8 @@ const makeFiles = (dirpath, items) => {
     const itemName = `${dashedPath}${itemExtname}`;
 
     const itemPath = path.join(dirpath, itemName);
+
+    pageLoaderDebug(`Creating file ${itemPath}`);
     return fs.appendFile(itemPath, data, getEncoding(itemExtname.slice(1)));
   });
   return Promise.all(result);
@@ -61,6 +66,7 @@ const pageLoader = (pageUrl, outputDirectory = process.cwd()) => {
   const outputHtmlPath = path.join(outputDirectory, htmlFileName);
   const contentsDirPath = path.join(outputDirectory, contentsDirName);
 
+  pageLoaderDebug(`GET ${pageUrl}`);
   const result = axios.get(pageUrl)
     .then(({ data }) => data)
     .then((data) => {
@@ -74,8 +80,12 @@ const pageLoader = (pageUrl, outputDirectory = process.cwd()) => {
         ...scriptElementsRefs,
         ...imgElementsRefs);
 
+      pageLoaderDebug(`Creating file ${outputHtmlPath}`);
       return fs.appendFile(outputHtmlPath, data, 'utf-8')
-        .then(() => fs.mkdir(contentsDirPath))
+        .then(() => {
+          pageLoaderDebug(`Creating directory ${contentsDirPath}`);
+          return fs.mkdir(contentsDirPath);
+        })
         .then(() => downoloadFilesContent(urls));
     })
     .then((values) => makeFiles(contentsDirPath, values));
