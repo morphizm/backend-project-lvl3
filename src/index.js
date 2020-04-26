@@ -4,10 +4,9 @@ import axios from 'axios';
 import _ from 'lodash';
 import cheerio from 'cheerio';
 
-const makeUrls = (base, ...items) => {
-  const flatItems = _.flatten(items);
-
-  return flatItems.map((itempath) => new URL(itempath, base).href);
+const makeUrls = (base, ...pathnames) => {
+  const flatPathnames = _.flatten(pathnames);
+  return flatPathnames.map((pathname) => new URL(pathname, base).href);
 };
 
 let c = console.log;
