@@ -31,6 +31,7 @@
   "homepage": "https://github.com/morphizm/backend-project-lvl3#readme",
   "dependencies": {
     "axios": "^0.19.2",
+    "cheerio": "^1.0.0-rc.3",
     "commander": "^5.0.0",
     "fs": "0.0.1-security",
     "lodash": "^4.17.15",
