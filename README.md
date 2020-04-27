@@ -10,5 +10,8 @@ Save a web page on your device
 $ make install
 ```
 
-### Package work example
+### Example
 [![asciicast](https://asciinema.org/a/oenDocoYV4TcaU2KJFE7t38Qd.svg)](https://asciinema.org/a/oenDocoYV4TcaU2KJFE7t38Qd)
+
+### With Debug
+[![asciicast](https://asciinema.org/a/koELvKftti8J1mxsbWcYqXeht.svg)](https://asciinema.org/a/koELvKftti8J1mxsbWcYqXeht)

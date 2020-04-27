@@ -1,6 +1,6 @@
 {
   "name": "morphizm-page-loader",
-  "version": "0.0.4",
+  "version": "0.0.6",
   "description": "page loader for load any page from web",
   "main": "dist/index.js",
   "bin": {

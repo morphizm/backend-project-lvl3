@@ -5,10 +5,11 @@ import axios from 'axios';
 import debug from 'debug';
 import _ from 'lodash';
 import cheerio from 'cheerio';
+import { getEncoding } from './utils';
 
 const pageLoaderDebug = debug('page-loader:');
 
-const makeUrls = (base, ...pathnames) => pathnames.map((pathname) => new URL(pathname, base).href);
+const makeUrl = (base, pathname) => new URL(pathname, base).href;
 
 let c = console.log;
 c = _.noop;
@@ -22,33 +23,30 @@ const downoloadFilesContent = (urls) => {
   return Promise.all(contents);
 };
 
-const getEncoding = (format) => {
-  const utf8 = 'utf-8';
-  const base64 = 'base64';
-  switch (format) {
-    case 'css':
-      return utf8;
-    case 'js':
-      return utf8;
-    default:
-      return base64;
-  }
-};
 
 const dashPath = (pathname) => _.replace(pathname, /[^A-Za-z\d]/g, '-');
+
+const getOutputFilePath = (dirpath, url) => {
+  const { pathname } = new URL(url);
+  const pathExtname = path.extname(pathname);
+  const pathWithoutFirstSlash = pathname.slice(1);
+  const pathWithoutExtname = _.replace(pathWithoutFirstSlash, new RegExp(`${pathExtname}$`), '');
+
+  const dashedPath = dashPath(pathWithoutExtname);
+  const resultPath = path.format({
+    name: dashedPath,
+    ext: pathExtname,
+    dir: dirpath,
+  });
+  return resultPath;
+};
 
 const makeFiles = (dirpath, items) => {
   const result = items.map((item) => {
     const { data, url } = item;
     const { pathname } = new URL(url);
     const itemExtname = path.extname(pathname);
-    const itemPathWithoutFirstSlash = pathname.slice(1);
-    const itemPathWithoutExtname = _.replace(itemPathWithoutFirstSlash, new RegExp(`${itemExtname}$`), '');
-
-    const dashedPath = dashPath(itemPathWithoutExtname);
-    const itemName = `${dashedPath}${itemExtname}`;
-
-    const itemPath = path.join(dirpath, itemName);
+    const itemPath = getOutputFilePath(dirpath, url);
 
     pageLoaderDebug(`Creating file ${itemPath}`);
     return fs.appendFile(itemPath, data, getEncoding(itemExtname.slice(1)));
@@ -71,17 +69,35 @@ const pageLoader = (pageUrl, outputDirectory = process.cwd()) => {
     .then(({ data }) => data)
     .then((data) => {
       const $ = cheerio.load(data);
-      const linksElementsRefs = $('link').map((i, el) => $(el).attr('href')).get();
-      const scriptElementsRefs = $('script').map((i, el) => $(el).attr('src')).get();
-      const imgElementsRefs = $('img').map((i, el) => $(el).attr('src')).get();
+      const mapping = {
+        link: 'href',
+        script: 'src',
+        img: 'src',
+      };
+      const tags = ['link', 'script', 'img'];
 
-      const urls = makeUrls(pageUrl,
-        ...linksElementsRefs,
-        ...scriptElementsRefs,
-        ...imgElementsRefs);
+      const elementsRefs = _.flatten(tags.map((tag) => {
+        const tagRefs = $(tag).map((i, el) => $(el).attr(mapping[tag])).get();
+        return tagRefs;
+      }));
+
+      tags.forEach((tag) => {
+        $(tag).each((i, el) => {
+          const oldRef = $(el).attr(mapping[tag]);
+          if (!oldRef) {
+            return;
+          }
+          const refUrl = makeUrl(pageUrl, oldRef);
+          const newRef = getOutputFilePath(contentsDirPath, refUrl);
+          $(el).attr(tag, newRef);
+        });
+      });
+
+      const urls = elementsRefs
+        .map((ref) => makeUrl(pageUrl, ref));
 
       pageLoaderDebug(`Creating file ${outputHtmlPath}`);
-      return fs.appendFile(outputHtmlPath, data, 'utf-8')
+      return fs.appendFile(outputHtmlPath, $.html(), 'utf-8')
         .then(() => {
           pageLoaderDebug(`Creating directory ${contentsDirPath}`);
           return fs.mkdir(contentsDirPath);

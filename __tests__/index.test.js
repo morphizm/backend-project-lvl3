@@ -96,7 +96,7 @@ test('loading css, js, img', async () => {
 
   expect(destFiles).toContain(expectedFileName);
   expect(destFiles).toContain(expectedDirName);
-
+  // c(dest);
   expect(pageFiles).toContain(jsFileName);
   expect(pageFiles).toContain(cssFileName);
   expect(pageFiles).toContain(imgFileName);
