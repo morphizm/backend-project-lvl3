@@ -3,6 +3,7 @@
   <head>
     <link rel="stylesheet" media="screen" href="/assets/css.css" />
     <script src="/assets/application.js"></script>
+    <script src="http://hexlet.ru/assets/application.js"></script>
   </head>
   <body>
     <img src="/assets/img.jpg" alt=" ">

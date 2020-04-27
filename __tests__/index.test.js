@@ -87,6 +87,10 @@ test('loading css, js, img', async () => {
     .reply(200, testJs);
 
   nock(/hexlet/)
+    .get(/.js/)
+    .reply(200, testJs);
+
+  nock(/hexlet/)
     .get(/.img/)
     .reply(200, testImg);
 

@@ -82,14 +82,15 @@ const pageLoader = (pageUrl, outputDirectory = process.cwd()) => {
       }));
 
       tags.forEach((tag) => {
+        const tagAttr = mapping[tag];
         $(tag).each((i, el) => {
-          const oldRef = $(el).attr(mapping[tag]);
+          const oldRef = $(el).attr(tagAttr);
           if (!oldRef) {
             return;
           }
           const refUrl = makeUrl(pageUrl, oldRef);
           const newRef = getOutputFilePath(contentsDirPath, refUrl);
-          $(el).attr(tag, newRef);
+          $(el).attr(tagAttr, newRef);
         });
       });
 
