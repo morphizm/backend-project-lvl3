@@ -11,4 +11,15 @@ export const getEncoding = (format) => {
   }
 };
 
-export const c = 1;
+export const getResponseType = (format) => {
+  const json = 'json';
+  const arraybuffer = 'arraybuffer';
+  switch (format) {
+    case 'css':
+      return json;
+    case 'js':
+      return json;
+    default:
+      return arraybuffer;
+  }
+};

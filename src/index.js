@@ -5,7 +5,7 @@ import axios from 'axios';
 import debug from 'debug';
 import _ from 'lodash';
 import cheerio from 'cheerio';
-import { getEncoding } from './utils';
+import { getEncoding, getResponseType } from './utils';
 
 const pageLoaderDebug = debug('page-loader:');
 
@@ -18,7 +18,10 @@ c(_.noop);
 const downoloadFilesContent = (urls) => {
   const contents = urls.map((url) => {
     pageLoaderDebug(`GET ${url}`);
-    return axios.get(url, { responseType: 'blob' }).then(({ data }) => ({ data, url }));
+    const format = path.extname(url).slice(1);
+    const responseType = getResponseType(format);
+
+    return axios.get(url, { responseType }).then(({ data }) => ({ data, url }));
   });
   return Promise.all(contents);
 };
