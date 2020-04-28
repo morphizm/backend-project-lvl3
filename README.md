@@ -15,3 +15,6 @@ $ make install
 
 ### With Debug
 [![asciicast](https://asciinema.org/a/koELvKftti8J1mxsbWcYqXeht.svg)](https://asciinema.org/a/koELvKftti8J1mxsbWcYqXeht)
+
+### Errors processing
+[![asciicast](https://asciinema.org/a/Gx20UfUsy8vuuYVcDTm6T1JSh.svg)](https://asciinema.org/a/Gx20UfUsy8vuuYVcDTm6T1JSh)
