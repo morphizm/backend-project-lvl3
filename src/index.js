@@ -11,9 +11,7 @@ import {
 
 const pageLoaderDebug = debug('page-loader:');
 
-const c = console.log;
-// c = _.noop;
-c(_.noop);
+// const c = console.log;
 
 const downoloadFile = (url) => {
   pageLoaderDebug(`GET ${url}`);
