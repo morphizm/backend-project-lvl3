@@ -1,0 +1,6 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" media="screen" href="/assets/css.css" />
+  </head>
+</html>

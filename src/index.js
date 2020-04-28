@@ -5,29 +5,23 @@ import axios from 'axios';
 import debug from 'debug';
 import _ from 'lodash';
 import cheerio from 'cheerio';
-import { getEncoding, getResponseType } from './utils';
+import {
+  getEncoding, getResponseType, dashPath, makeUrl,
+} from './utils';
 
 const pageLoaderDebug = debug('page-loader:');
 
-const makeUrl = (base, pathname) => new URL(pathname, base).href;
-
-let c = console.log;
-c = _.noop;
+const c = console.log;
+// c = _.noop;
 c(_.noop);
 
-const downoloadFilesContent = (urls) => {
-  const contents = urls.map((url) => {
-    pageLoaderDebug(`GET ${url}`);
-    const format = path.extname(url).slice(1);
-    const responseType = getResponseType(format);
+const downoloadFile = (url) => {
+  pageLoaderDebug(`GET ${url}`);
+  const format = path.extname(url).slice(1);
+  const responseType = getResponseType(format);
 
-    return axios.get(url, { responseType }).then(({ data }) => ({ data, url }));
-  });
-  return Promise.all(contents);
+  return axios.get(url, { responseType });
 };
-
-
-const dashPath = (pathname) => _.replace(pathname, /[^A-Za-z\d]/g, '-');
 
 const getOutputFilePath = (dirpath, url) => {
   const { pathname } = new URL(url);
@@ -44,17 +38,17 @@ const getOutputFilePath = (dirpath, url) => {
   return resultPath;
 };
 
-const makeFiles = (dirpath, items) => {
-  const result = items.map((item) => {
-    const { data, url } = item;
-    const { pathname } = new URL(url);
-    const itemExtname = path.extname(pathname);
-    const itemPath = getOutputFilePath(dirpath, url);
+const makeFile = (dirpath, item) => {
+  if (!item) {
+    return Promise.resolve();
+  }
+  const { data, url } = item;
+  const { pathname } = new URL(url);
+  const itemExtname = path.extname(pathname);
+  const itemPath = getOutputFilePath(dirpath, url);
 
-    pageLoaderDebug(`Creating file ${itemPath}`);
-    return fs.appendFile(itemPath, data, getEncoding(itemExtname.slice(1)));
-  });
-  return Promise.all(result);
+  pageLoaderDebug(`Creating file ${itemPath}`);
+  return fs.appendFile(itemPath, data, getEncoding(itemExtname.slice(1)));
 };
 
 const pageLoader = (pageUrl, outputDirectory = process.cwd()) => {
@@ -70,8 +64,13 @@ const pageLoader = (pageUrl, outputDirectory = process.cwd()) => {
   pageLoaderDebug(`GET ${pageUrl}`);
   const result = axios.get(pageUrl)
     .then(({ data }) => data)
-    .then((data) => {
-      const $ = cheerio.load(data);
+    .catch((err) => {
+      const message = `${err.message} -- RESOURCE ${err.config.url}`;
+      console.error(message);
+      throw err;
+    })
+    .then((htmlData) => {
+      const $ = cheerio.load(htmlData);
       const mapping = {
         link: 'href',
         script: 'src',
@@ -100,15 +99,33 @@ const pageLoader = (pageUrl, outputDirectory = process.cwd()) => {
       const urls = elementsRefs
         .map((ref) => makeUrl(pageUrl, ref));
 
-      pageLoaderDebug(`Creating file ${outputHtmlPath}`);
-      return fs.appendFile(outputHtmlPath, $.html(), 'utf-8')
-        .then(() => {
-          pageLoaderDebug(`Creating directory ${contentsDirPath}`);
-          return fs.mkdir(contentsDirPath);
-        })
-        .then(() => downoloadFilesContent(urls));
+      const resources = urls.map((url) => downoloadFile(url)
+        .then(({ data }) => ({ data, url }))
+        .catch((err) => {
+          const message = `${err.message} -- RESOURCE ${err.config.url}`;
+          console.error(message);
+          throw err;
+        }));
+
+      return Promise.all(resources)
+        .then((values) => {
+          pageLoaderDebug(`Creating file ${outputHtmlPath}`);
+          return fs.appendFile(outputHtmlPath, $.html(), 'utf-8')
+            .then(() => {
+              pageLoaderDebug(`Creating directory ${contentsDirPath}`);
+              return fs.mkdir(contentsDirPath);
+            })
+            .catch((err) => {
+              console.error(err.message);
+              throw err;
+            })
+            .then(() => values);
+        });
     })
-    .then((values) => makeFiles(contentsDirPath, values));
+    .then((values) => {
+      const total = values.map((value) => makeFile(contentsDirPath, value));
+      return Promise.all(total);
+    });
   return result;
 };
 

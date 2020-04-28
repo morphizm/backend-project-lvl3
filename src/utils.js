@@ -1,3 +1,5 @@
+import _ from 'lodash';
+
 export const getEncoding = (format) => {
   const utf8 = 'utf-8';
   const base64 = 'base64';
@@ -23,3 +25,7 @@ export const getResponseType = (format) => {
       return arraybuffer;
   }
 };
+
+export const dashPath = (pathname) => _.replace(pathname, /[^A-Za-z\d]/g, '-');
+
+export const makeUrl = (base, pathname) => new URL(pathname, base).href;
