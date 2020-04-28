@@ -12,8 +12,6 @@ const getFixturePath = (name) => path.join(__dirname, '__fixtures__', name);
 
 let dest;
 
-// const c = console.log;
-
 const testHtmlPath = getFixturePath('test.html.txt');
 const testSmallHtmlPath = getFixturePath('test-small.html.txt');
 const testCssPath = getFixturePath('test.css.txt');
@@ -55,11 +53,11 @@ describe('success', () => {
 
     const dirPath = path.join(dest, expectedDirName);
 
-    nock(/hexlet/).get(/courses/).reply(200, testHtml);
-    nock(/hexlet/).get(/.css/).reply(200, testCss);
-    nock(/hexlet/).get(/.js/).reply(200, testJs);
-    nock(/hexlet/).get(/.js/).reply(200, testJs);
-    nock(/hexlet/).get(/.img/).reply(200, testImg);
+    nock(/hexlet/).log(console.log).get(/courses/).reply(200, testHtml);
+    nock(/hexlet/).log(console.log).get(/.css/).reply(200, testCss);
+    nock(/hexlet/).log(console.log).get(/.js/).reply(200, testJs);
+    nock(/hexlet/).log(console.log).get(/.js/).reply(200, testJs);
+    nock(/hexlet/).log(console.log).get(/.img/).reply(200, testImg);
 
     await pageLoader(hexletUrl, dest);
     const destFiles = await fs.readdir(dest);
@@ -76,7 +74,7 @@ describe('success', () => {
 describe('failure', () => {
   test('not create a html file', async () => {
     const expectedFileName = 'ru-hexlet-io-courses.html';
-    nock(/hexlet/).get(/courses/).reply(404);
+    nock(/hexlet/).log(console.log).get(/courses/).reply(404);
 
     await expect(pageLoader(hexletUrl, dest)).rejects.toThrow();
     const destFiles = await fs.readdir(dest);
@@ -88,8 +86,8 @@ describe('failure', () => {
     const expectedFileName = 'ru-hexlet-io-courses.html';
     const expectedDirName = 'ru-hexlet-io-courses_files';
 
-    nock(/hexlet/).get(/courses/).reply(200, testHtml);
-    nock(/hexlet/).get(/.css/).reply(404);
+    nock(/hexlet/).log(console.log).get(/courses/).reply(200, testHtml);
+    nock(/hexlet/).log(console.log).get(/.css/).reply(404);
 
     await expect(pageLoader(hexletUrl, dest)).rejects.toThrow();
     const destFiles = await fs.readdir(dest);
@@ -102,8 +100,8 @@ describe('failure', () => {
     const testHtml = await fs.readFile(testSmallHtmlPath, 'utf-8');
     const nonExistantDirectory = path.join(dest, 'non');
 
-    nock(/hexlet/).get(/courses/).reply(200, testHtml);
-    nock(/hexlet/).get(/.css/).reply(200);
+    nock(/hexlet/).log(console.log).get(/courses/).reply(200, testHtml);
+    nock(/hexlet/).log(console.log).get(/.css/).reply(200);
 
     await expect(pageLoader(hexletUrl, nonExistantDirectory)).rejects.toThrow();
     await expect(fs.readdir(nonExistantDirectory)).rejects.toThrow();

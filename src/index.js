@@ -5,15 +5,24 @@ import axios from 'axios';
 import debug from 'debug';
 import _ from 'lodash';
 import cheerio from 'cheerio';
+import Listr from 'listr';
 import {
-  getEncoding, getResponseType, dashPath, makeUrl,
+  getEncoding, getResponseType, dashPath, makeUrl, getOutputFilePath,
 } from './utils';
 
 const pageLoaderDebug = debug('page-loader:');
 
-// const c = console.log;
+const runTask = (title, task) => new Listr([
+  { title, task: () => task, exitOnError: false },
+], { exitOnError: false }).run().catch(() => {});
 
-const downoloadFile = (url) => {
+const wrapAxiosError = (axiosError) => {
+  const message = `${axiosError.message} -- RESOURCE ${axiosError.config.url}`;
+  console.error(message);
+  throw axiosError;
+};
+
+const downloadResource = (url) => {
   pageLoaderDebug(`GET ${url}`);
   const format = path.extname(url).slice(1);
   const responseType = getResponseType(format);
@@ -21,25 +30,7 @@ const downoloadFile = (url) => {
   return axios.get(url, { responseType });
 };
 
-const getOutputFilePath = (dirpath, url) => {
-  const { pathname } = new URL(url);
-  const pathExtname = path.extname(pathname);
-  const pathWithoutFirstSlash = pathname.slice(1);
-  const pathWithoutExtname = _.replace(pathWithoutFirstSlash, new RegExp(`${pathExtname}$`), '');
-
-  const dashedPath = dashPath(pathWithoutExtname);
-  const resultPath = path.format({
-    name: dashedPath,
-    ext: pathExtname,
-    dir: dirpath,
-  });
-  return resultPath;
-};
-
-const makeFile = (dirpath, item) => {
-  if (!item) {
-    return Promise.resolve();
-  }
+const createResource = (dirpath, item) => {
   const { data, url } = item;
   const { pathname } = new URL(url);
   const itemExtname = path.extname(pathname);
@@ -60,13 +51,12 @@ const pageLoader = (pageUrl, outputDirectory = process.cwd()) => {
   const contentsDirPath = path.join(outputDirectory, contentsDirName);
 
   pageLoaderDebug(`GET ${pageUrl}`);
-  const result = axios.get(pageUrl)
+  const downloadedPage = axios.get(pageUrl);
+  runTask(`Download ${pageUrl}`, downloadedPage);
+
+  const result = downloadedPage
     .then(({ data }) => data)
-    .catch((err) => {
-      const message = `${err.message} -- RESOURCE ${err.config.url}`;
-      console.error(message);
-      throw err;
-    })
+    .catch(wrapAxiosError)
     .then((htmlData) => {
       const $ = cheerio.load(htmlData);
       const mapping = {
@@ -97,21 +87,24 @@ const pageLoader = (pageUrl, outputDirectory = process.cwd()) => {
       const urls = elementsRefs
         .map((ref) => makeUrl(pageUrl, ref));
 
-      const resources = urls.map((url) => downoloadFile(url)
-        .then(({ data }) => ({ data, url }))
-        .catch((err) => {
-          const message = `${err.message} -- RESOURCE ${err.config.url}`;
-          console.error(message);
-          throw err;
-        }));
+      const resources = urls.map((url) => {
+        const task = downloadResource(url);
+        runTask(`Download ${url}`, task);
+        return task.then(({ data }) => ({ data, url }))
+          .catch(wrapAxiosError);
+      });
 
       return Promise.all(resources)
         .then((values) => {
           pageLoaderDebug(`Creating file ${outputHtmlPath}`);
-          return fs.appendFile(outputHtmlPath, $.html(), 'utf-8')
+          const createdHtmlFile = fs.appendFile(outputHtmlPath, $.html(), 'utf-8');
+          runTask(`Create ${outputHtmlPath}`, createdHtmlFile);
+          return createdHtmlFile
             .then(() => {
               pageLoaderDebug(`Creating directory ${contentsDirPath}`);
-              return fs.mkdir(contentsDirPath);
+              const createdDir = fs.mkdir(contentsDirPath);
+              runTask(`Create ${contentsDirPath}`, createdDir);
+              return createdDir;
             })
             .catch((err) => {
               console.error(err.message);
@@ -121,9 +114,15 @@ const pageLoader = (pageUrl, outputDirectory = process.cwd()) => {
         });
     })
     .then((values) => {
-      const total = values.map((value) => makeFile(contentsDirPath, value));
+      const total = values.map((value) => {
+        const createdResource = createResource(contentsDirPath, value);
+        runTask(`Create resource ${getOutputFilePath(contentsDirPath, value.url)}`, createdResource);
+        return createdResource;
+      });
+
       return Promise.all(total);
     });
+
   return result;
 };
 
