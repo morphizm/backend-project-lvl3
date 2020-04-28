@@ -18,3 +18,6 @@ $ make install
 
 ### Errors processing
 [![asciicast](https://asciinema.org/a/Gx20UfUsy8vuuYVcDTm6T1JSh.svg)](https://asciinema.org/a/Gx20UfUsy8vuuYVcDTm6T1JSh)
+
+### With Spinner
+[![asciicast](https://asciinema.org/a/cNKu5iBWgDOHFtZGLijukpObW.svg)](https://asciinema.org/a/cNKu5iBWgDOHFtZGLijukpObW)
