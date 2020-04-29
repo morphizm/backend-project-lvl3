@@ -26,10 +26,10 @@ beforeEach(async () => {
 
 describe('success', () => {
   test('create a file, long url', async () => {
-    const { href } = new URL('http://yandex.ru/search/?lr=213&text=hexlet#hash');
-    const expectedFileName = 'yandex-ru-search--lr-213-text-hexlet-hash.html';
+    const href = 'http://ya.ru/search/?lr=213&text=hexlet#hash';
+    const expectedFileName = 'ya-ru-search--lr-213-text-hexlet-hash.html';
 
-    nock(/yandex/)
+    nock(/ya/)
       .log(console.log)
       .get(/search/)
       .reply(200);
@@ -52,6 +52,9 @@ describe('success', () => {
     const [jsFileName, cssFileName, imgFileName] = ['assets-application.js', 'assets-css.css', 'assets-img.jpg'];
 
     const dirPath = path.join(dest, expectedDirName);
+    const jsFilePath = path.join(dirPath, jsFileName);
+    const cssFilePath = path.join(dirPath, cssFileName);
+    const imgFilePath = path.join(dirPath, imgFileName);
 
     nock(/hexlet/).log(console.log).get(/courses/).reply(200, testHtml);
     nock(/hexlet/).log(console.log).get(/.css/).reply(200, testCss);
@@ -61,13 +64,12 @@ describe('success', () => {
 
     await pageLoader(hexletUrl, dest);
     const destFiles = await fs.readdir(dest);
-    const pageFiles = await fs.readdir(dirPath);
 
     expect(destFiles).toContain(expectedFileName);
     expect(destFiles).toContain(expectedDirName);
-    expect(pageFiles).toContain(jsFileName);
-    expect(pageFiles).toContain(cssFileName);
-    expect(pageFiles).toContain(imgFileName);
+    await expect(fs.readFile(jsFilePath, 'utf-8')).resolves.toEqual(testJs);
+    await expect(fs.readFile(cssFilePath, 'utf-8')).resolves.toEqual(testCss);
+    await expect(fs.readFile(imgFilePath, 'utf-8')).resolves.toEqual(testImg);
   });
 });
 
@@ -85,15 +87,18 @@ describe('failure', () => {
     const testHtml = await fs.readFile(testSmallHtmlPath, 'utf-8');
     const expectedFileName = 'ru-hexlet-io-courses.html';
     const expectedDirName = 'ru-hexlet-io-courses_files';
+    const dirPath = path.join(dest, expectedDirName);
 
     nock(/hexlet/).log(console.log).get(/courses/).reply(200, testHtml);
     nock(/hexlet/).log(console.log).get(/.css/).reply(404);
 
     await expect(pageLoader(hexletUrl, dest)).rejects.toThrow();
     const destFiles = await fs.readdir(dest);
+    const pageFiles = await fs.readdir(dirPath);
 
-    expect(destFiles).not.toContain(expectedFileName);
-    expect(destFiles).not.toContain(expectedDirName);
+    expect(destFiles).toContain(expectedFileName);
+    expect(destFiles).toContain(expectedDirName);
+    expect(pageFiles).toHaveLength(0);
   });
 
   test('bad dirpath', async () => {

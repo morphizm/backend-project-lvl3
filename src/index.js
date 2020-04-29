@@ -12,49 +12,52 @@ import {
 
 const pageLoaderDebug = debug('page-loader:');
 
-const runTask = (title, task) => new Listr([
-  { title, task: () => task, exitOnError: false },
-], { exitOnError: false }).run().catch(() => {});
+const runTask = (title, task) => new Listr([{ title, task: () => task }], { exitOnError: false })
+  .run().catch(() => {});
 
 const wrapAxiosError = (axiosError) => {
-  const message = `${axiosError.message} -- RESOURCE ${axiosError.config.url}`;
-  console.error(message);
-  throw axiosError;
+  const message = `${axiosError.message}, RESOURCE -- ${axiosError.config.url}`;
+  throw new Error(message);
 };
 
-const downloadResource = (url) => {
+const loadResource = (url) => {
   pageLoaderDebug(`GET ${url}`);
+
   const format = path.extname(url).slice(1);
   const responseType = getResponseType(format);
-
   return axios.get(url, { responseType });
 };
 
-const createResource = (dirpath, item) => {
-  const { data, url } = item;
+const createResource = (dirpath, resource) => {
+  const { data, url } = resource;
   const { pathname } = new URL(url);
   const itemExtname = path.extname(pathname);
   const itemPath = getOutputFilePath(dirpath, url);
 
   pageLoaderDebug(`Creating file ${itemPath}`);
-  return fs.appendFile(itemPath, data, getEncoding(itemExtname.slice(1)));
+
+  return fs.writeFile(itemPath, data, { encoding: getEncoding(itemExtname.slice(1)) });
 };
 
 const pageLoader = (pageUrl, outputDirectory = process.cwd()) => {
   const urlWithoutProtocol = _.replace(pageUrl, /http:\/\/|https:\/\//, '');
   const dashedName = dashPath(urlWithoutProtocol);
+  const outputHtmlPath = path.format({
+    name: dashedName,
+    dir: outputDirectory,
+    ext: '.html',
+  });
 
-  const htmlFileName = `${dashedName}.html`;
-  const contentsDirName = `${dashedName}_files`;
-
-  const outputHtmlPath = path.join(outputDirectory, htmlFileName);
-  const contentsDirPath = path.join(outputDirectory, contentsDirName);
+  const resourcesDirName = `${dashedName}_files`;
+  const resourcesDirPath = path.join(outputDirectory, resourcesDirName);
 
   pageLoaderDebug(`GET ${pageUrl}`);
-  const downloadedPage = axios.get(pageUrl);
-  runTask(`Download ${pageUrl}`, downloadedPage);
+  const loadedPage = axios.get(pageUrl);
+  runTask(`Load ${pageUrl}`, loadedPage);
 
-  const result = downloadedPage
+  let urls;
+
+  return loadedPage
     .then(({ data }) => data)
     .catch(wrapAxiosError)
     .then((htmlData) => {
@@ -79,51 +82,41 @@ const pageLoader = (pageUrl, outputDirectory = process.cwd()) => {
             return;
           }
           const refUrl = makeUrl(pageUrl, oldRef);
-          const newRef = getOutputFilePath(contentsDirPath, refUrl);
+          const newRef = getOutputFilePath(resourcesDirPath, refUrl);
           $(el).attr(tagAttr, newRef);
         });
       });
 
-      const urls = elementsRefs
-        .map((ref) => makeUrl(pageUrl, ref));
+      urls = elementsRefs.map((ref) => makeUrl(pageUrl, ref));
 
+      pageLoaderDebug(`Creating file ${outputHtmlPath}`);
+      const createdHtmlFile = fs.writeFile(outputHtmlPath, $.html());
+      runTask(`Create ${outputHtmlPath}`, createdHtmlFile);
+      return createdHtmlFile;
+    })
+    .then(() => {
+      pageLoaderDebug(`Creating directory ${resourcesDirPath}`);
+      const createdDir = fs.mkdir(resourcesDirPath);
+      runTask(`Create ${resourcesDirPath}`, createdDir);
+      return createdDir;
+    })
+    .then(() => {
       const resources = urls.map((url) => {
-        const task = downloadResource(url);
-        runTask(`Download ${url}`, task);
-        return task.then(({ data }) => ({ data, url }))
-          .catch(wrapAxiosError);
+        const task = loadResource(url);
+        runTask(`Load ${url}`, task);
+        return task.then(({ data }) => ({ data, url })).catch(wrapAxiosError);
       });
-
-      return Promise.all(resources)
-        .then((values) => {
-          pageLoaderDebug(`Creating file ${outputHtmlPath}`);
-          const createdHtmlFile = fs.appendFile(outputHtmlPath, $.html(), 'utf-8');
-          runTask(`Create ${outputHtmlPath}`, createdHtmlFile);
-          return createdHtmlFile
-            .then(() => {
-              pageLoaderDebug(`Creating directory ${contentsDirPath}`);
-              const createdDir = fs.mkdir(contentsDirPath);
-              runTask(`Create ${contentsDirPath}`, createdDir);
-              return createdDir;
-            })
-            .catch((err) => {
-              console.error(err.message);
-              throw err;
-            })
-            .then(() => values);
-        });
+      return Promise.all(resources);
     })
     .then((values) => {
-      const total = values.map((value) => {
-        const createdResource = createResource(contentsDirPath, value);
-        runTask(`Create resource ${getOutputFilePath(contentsDirPath, value.url)}`, createdResource);
+      const result = values.map((value) => {
+        const createdResource = createResource(resourcesDirPath, value);
+        runTask(`Create resource ${getOutputFilePath(resourcesDirPath, value.url)}`, createdResource);
         return createdResource;
       });
 
-      return Promise.all(total);
+      return Promise.all(result);
     });
-
-  return result;
 };
 
 export default pageLoader;

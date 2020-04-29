@@ -14,7 +14,8 @@ program
       .then(() => {
         process.exit(0);
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error(err.message);
         process.exit(1);
       });
   });
