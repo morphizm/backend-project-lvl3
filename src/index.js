@@ -116,7 +116,8 @@ const pageLoader = (pageUrl, outputDirectory = process.cwd()) => {
       });
 
       return Promise.all(result);
-    });
+    })
+    .then(() => outputDirectory);
 };
 
 export default pageLoader;

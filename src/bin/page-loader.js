@@ -11,6 +11,9 @@ program
   .arguments('<pageUrl>')
   .action((pageUrl) => {
     pageLoader(pageUrl, program.output)
+      .then((resultPath) => {
+        console.log(`Successfully downloaded in ${resultPath}`);
+      })
       .catch((err) => {
         console.error(err.message);
         process.exit(1);
