@@ -6,6 +6,7 @@ import debug from 'debug';
 import _ from 'lodash';
 import cheerio from 'cheerio';
 import Listr from 'listr';
+import url from 'url';
 import {
   getEncoding, getResponseType, dashPath, makeUrl, getOutputFilePath,
 } from './utils';
@@ -19,19 +20,18 @@ const wrapAxiosError = (axiosError) => {
   throw new Error(message);
 };
 
-const loadResource = (url) => {
-  pageLoaderDebug(`GET ${url}`);
+const loadResource = (uri) => {
+  pageLoaderDebug(`GET ${uri}`);
 
-  const format = path.extname(url).slice(1);
+  const format = path.extname(uri).slice(1);
   const responseType = getResponseType(format);
-  return axios.get(url, { responseType });
+  return axios.get(uri, { responseType });
 };
 
 const createResource = (dirpath, resource) => {
-  const { data, url } = resource;
-  const { pathname } = new URL(url);
-  const itemExtname = path.extname(pathname);
-  const itemPath = getOutputFilePath(dirpath, url);
+  const { data } = resource;
+  const itemExtname = path.extname(resource.url.pathname);
+  const itemPath = getOutputFilePath(dirpath, resource.url);
 
   pageLoaderDebug(`Creating file ${itemPath}`);
 
@@ -39,8 +39,14 @@ const createResource = (dirpath, resource) => {
 };
 
 const pageLoader = (pageUrl, outputDirectory = process.cwd()) => {
-  const urlWithoutProtocol = _.replace(pageUrl, /http:\/\/|https:\/\//, '');
-  const dashedName = dashPath(urlWithoutProtocol);
+  const parsedUrl = url.parse(pageUrl);
+  const newUrl = url.format({
+    ...parsedUrl,
+    protocol: '',
+    slashes: false,
+  });
+
+  const dashedName = dashPath(newUrl);
   const outputHtmlPath = path.format({
     name: dashedName,
     dir: outputDirectory,
@@ -100,10 +106,10 @@ const pageLoader = (pageUrl, outputDirectory = process.cwd()) => {
       return createdDir;
     })
     .then(() => {
-      const resources = urls.map((url) => {
-        const task = loadResource(url);
-        listr.add({ title: `Load ${url}`, task: () => task });
-        return task.then(({ data }) => ({ data, url })).catch(wrapAxiosError);
+      const resources = urls.map((uri) => {
+        const task = loadResource(uri);
+        listr.add({ title: `Load ${uri}`, task: () => task });
+        return task.then(({ data }) => ({ data, url: new URL(uri) })).catch(wrapAxiosError);
       });
       return Promise.all(resources);
     })
