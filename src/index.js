@@ -4,12 +4,12 @@ import 'axios-debug-log';
 import axios from 'axios';
 import debug from 'debug';
 import _ from 'lodash';
-import cheerio from 'cheerio';
 import Listr from 'listr';
 import url from 'url';
 import {
   getEncoding, getResponseType, dashPath, makeUrl, getOutputFilePath,
 } from './utils';
+import parseHtml from './parseHtml';
 
 const pageLoaderDebug = debug('page-loader:');
 
@@ -66,36 +66,12 @@ const pageLoader = (pageUrl, outputDirectory = process.cwd()) => {
   return loadedPage
     .then(({ data }) => data)
     .then((htmlData) => {
-      const $ = cheerio.load(htmlData);
-      const mapping = {
-        link: 'href',
-        script: 'src',
-        img: 'src',
-      };
-      const tags = ['link', 'script', 'img'];
+      const { refs, html } = parseHtml(htmlData, pageUrl, resourcesDirPath);
 
-      const elementsRefs = _.flatten(tags.map((tag) => {
-        const tagRefs = $(tag).map((i, el) => $(el).attr(mapping[tag])).get();
-        return tagRefs;
-      }));
-
-      tags.forEach((tag) => {
-        const tagAttr = mapping[tag];
-        $(tag).each((i, el) => {
-          const oldRef = $(el).attr(tagAttr);
-          if (!oldRef) {
-            return;
-          }
-          const refUrl = makeUrl(pageUrl, oldRef);
-          const newRef = getOutputFilePath(resourcesDirPath, refUrl);
-          $(el).attr(tagAttr, newRef);
-        });
-      });
-
-      urls = elementsRefs.map((ref) => makeUrl(pageUrl, ref));
+      urls = refs.map((ref) => makeUrl(pageUrl, ref));
 
       pageLoaderDebug(`Creating file ${outputHtmlPath}`);
-      const createdHtmlFile = fs.writeFile(outputHtmlPath, $.html());
+      const createdHtmlFile = fs.writeFile(outputHtmlPath, html);
       listr.add({ title: `Create ${outputHtmlPath}`, task: () => createdHtmlFile });
       return createdHtmlFile;
     })
