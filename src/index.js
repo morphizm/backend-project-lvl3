@@ -12,8 +12,7 @@ import {
 
 const pageLoaderDebug = debug('page-loader:');
 
-const runTask = (title, task) => new Listr([{ title, task: () => task }], { exitOnError: false })
-  .run().catch(() => {});
+const listr = new Listr([], { exitOnError: false });
 
 const wrapAxiosError = (axiosError) => {
   const message = `${axiosError.message}, RESOURCE -- ${axiosError.config.url}`;
@@ -53,7 +52,7 @@ const pageLoader = (pageUrl, outputDirectory = process.cwd()) => {
 
   pageLoaderDebug(`GET ${pageUrl}`);
   const loadedPage = axios.get(pageUrl);
-  runTask(`Load ${pageUrl}`, loadedPage);
+  listr.add({ title: `Load ${pageUrl}`, task: () => loadedPage });
 
   let urls;
 
@@ -91,19 +90,19 @@ const pageLoader = (pageUrl, outputDirectory = process.cwd()) => {
 
       pageLoaderDebug(`Creating file ${outputHtmlPath}`);
       const createdHtmlFile = fs.writeFile(outputHtmlPath, $.html());
-      runTask(`Create ${outputHtmlPath}`, createdHtmlFile);
+      listr.add({ title: `Create ${outputHtmlPath}`, task: () => createdHtmlFile });
       return createdHtmlFile;
     })
     .then(() => {
       pageLoaderDebug(`Creating directory ${resourcesDirPath}`);
       const createdDir = fs.mkdir(resourcesDirPath);
-      runTask(`Create ${resourcesDirPath}`, createdDir);
+      listr.add({ title: `Create ${resourcesDirPath}`, task: () => createdDir });
       return createdDir;
     })
     .then(() => {
       const resources = urls.map((url) => {
         const task = loadResource(url);
-        runTask(`Load ${url}`, task);
+        listr.add({ title: `Load ${url}`, task: () => task });
         return task.then(({ data }) => ({ data, url })).catch(wrapAxiosError);
       });
       return Promise.all(resources);
@@ -111,11 +110,16 @@ const pageLoader = (pageUrl, outputDirectory = process.cwd()) => {
     .then((values) => {
       const result = values.map((value) => {
         const createdResource = createResource(resourcesDirPath, value);
-        runTask(`Create resource ${getOutputFilePath(resourcesDirPath, value.url)}`, createdResource);
+        listr.add({ title: `Create resource ${getOutputFilePath(resourcesDirPath, value.url)}`, task: () => createdResource });
         return createdResource;
       });
 
       return Promise.all(result);
+    })
+    .then(() => listr.run().catch(_.noop()))
+    .catch((err) => {
+      listr.run().catch(() => {});
+      throw err;
     })
     .then(() => outputDirectory);
 };
