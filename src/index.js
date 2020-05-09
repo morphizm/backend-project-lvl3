@@ -15,10 +15,11 @@ const pageLoaderDebug = debug('page-loader:');
 
 const listr = new Listr([], { exitOnError: false });
 
-const wrapAxiosError = (axiosError) => {
-  const message = `${axiosError.message}, RESOURCE -- ${axiosError.config.url}`;
-  throw new Error(message);
-};
+axios.interceptors.response.use((response) => response, (error) => {
+  // eslint-disable-next-line no-param-reassign
+  error.message = `${error.message}, RESOURCE -- ${error.config.url}`;
+  return Promise.reject(error);
+});
 
 const loadResource = (uri) => {
   pageLoaderDebug(`GET ${uri}`);
@@ -64,7 +65,6 @@ const pageLoader = (pageUrl, outputDirectory = process.cwd()) => {
 
   return loadedPage
     .then(({ data }) => data)
-    .catch(wrapAxiosError)
     .then((htmlData) => {
       const $ = cheerio.load(htmlData);
       const mapping = {
@@ -109,7 +109,7 @@ const pageLoader = (pageUrl, outputDirectory = process.cwd()) => {
       const resources = urls.map((uri) => {
         const task = loadResource(uri);
         listr.add({ title: `Load ${uri}`, task: () => task });
-        return task.then(({ data }) => ({ data, url: new URL(uri) })).catch(wrapAxiosError);
+        return task.then(({ data }) => ({ data, url: new URL(uri) }));
       });
       return Promise.all(resources);
     })
