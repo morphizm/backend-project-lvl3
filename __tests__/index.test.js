@@ -35,9 +35,9 @@ describe('success', () => {
       .reply(200);
 
     await pageLoader(href, dest);
-    const destFiles = await fs.readdir(dest);
+    const destFilePaths = await fs.readdir(dest);
 
-    expect(destFiles).toContain(expectedFileName);
+    expect(destFilePaths).toContain(expectedFileName);
   });
 
   test('with resources', async () => {
@@ -63,10 +63,10 @@ describe('success', () => {
     nock(/hexlet/).log(console.log).get(/.img/).reply(200, testImg);
 
     await pageLoader(hexletUrl, dest);
-    const destFiles = await fs.readdir(dest);
+    const destFilePaths = await fs.readdir(dest);
 
-    expect(destFiles).toContain(expectedFileName);
-    expect(destFiles).toContain(expectedDirName);
+    expect(destFilePaths).toContain(expectedFileName);
+    expect(destFilePaths).toContain(expectedDirName);
     await expect(fs.readFile(jsFilePath, 'utf-8')).resolves.toEqual(testJs);
     await expect(fs.readFile(cssFilePath, 'utf-8')).resolves.toEqual(testCss);
     await expect(fs.readFile(imgFilePath, 'utf-8')).resolves.toEqual(testImg);
@@ -79,8 +79,8 @@ describe('failure', () => {
     nock(/hexlet/).log(console.log).get(/courses/).reply(404);
 
     await expect(pageLoader(hexletUrl, dest)).rejects.toThrow();
-    const destFiles = await fs.readdir(dest);
-    expect(destFiles).not.toContain(expectedFileName);
+    const destFilePaths = await fs.readdir(dest);
+    expect(destFilePaths).not.toContain(expectedFileName);
   });
 
   test('with errors resources', async () => {
@@ -93,11 +93,11 @@ describe('failure', () => {
     nock(/hexlet/).log(console.log).get(/.css/).reply(404);
 
     await expect(pageLoader(hexletUrl, dest)).rejects.toThrow();
-    const destFiles = await fs.readdir(dest);
+    const destFilePaths = await fs.readdir(dest);
     const pageFiles = await fs.readdir(dirPath);
 
-    expect(destFiles).toContain(expectedFileName);
-    expect(destFiles).toContain(expectedDirName);
+    expect(destFilePaths).toContain(expectedFileName);
+    expect(destFilePaths).toContain(expectedDirName);
     expect(pageFiles).toHaveLength(0);
   });
 
