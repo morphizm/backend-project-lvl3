@@ -3,49 +3,40 @@ import path from 'path';
 import 'axios-debug-log';
 import axios from 'axios';
 import debug from 'debug';
-import _ from 'lodash';
 import Listr from 'listr';
-import url from 'url';
 import {
-  getEncoding, getResponseType, dashPath, makeUrl, getOutputFilePath,
+  dashPath, makeUrl, getOutputFilePath,
 } from './utils';
 import parseHtml from './parseHtml';
 
-const pageLoaderDebug = debug('page-loader:');
-
-const listr = new Listr([], { exitOnError: false });
-
-axios.interceptors.response.use((response) => response, (error) => {
-  // eslint-disable-next-line no-param-reassign
-  error.message = `${error.message}, RESOURCE -- ${error.config.url}`;
-  return Promise.reject(error);
+require('axios-debug-log')({
+  error(axiosDebug, error) {
+    axiosDebug(`${error.message}, RESOURCE -- ${error.config.url}`);
+  },
 });
+
+const pageLoaderDebug = debug('page-loader:');
 
 const loadResource = (uri) => {
   pageLoaderDebug(`GET ${uri}`);
 
-  const format = path.extname(uri).slice(1);
-  const responseType = getResponseType(format);
-  return axios.get(uri, { responseType });
+  return axios.get(uri, { responseType: 'arraybuffer' });
 };
 
 const createResource = (dirpath, resource) => {
   const { data } = resource;
-  const itemExtname = path.extname(resource.url.pathname);
   const itemPath = getOutputFilePath(dirpath, resource.url);
 
   pageLoaderDebug(`Creating file ${itemPath}`);
 
-  return fs.writeFile(itemPath, data, { encoding: getEncoding(itemExtname.slice(1)) });
+  return fs.writeFile(itemPath, data, { encoding: 'base64' });
 };
 
 const pageLoader = (pageUrl, outputDirectory = process.cwd()) => {
-  const parsedUrl = url.parse(pageUrl);
-  const newUrl = url.format({
-    ...parsedUrl,
-    protocol: '',
-    slashes: false,
-  });
+  const listr = new Listr([], { exitOnError: false });
+
+  const parsedUrl = new URL(pageUrl);
+  const newUrl = [parsedUrl.hostname, parsedUrl.pathname, parsedUrl.search, parsedUrl.hash].join('');
 
   const dashedName = dashPath(newUrl);
   const outputHtmlPath = path.format({
@@ -98,7 +89,7 @@ const pageLoader = (pageUrl, outputDirectory = process.cwd()) => {
 
       return Promise.all(result);
     })
-    .then(() => listr.run().catch(_.noop()))
+    .then(() => listr.run())
     .catch((err) => {
       listr.run().catch(() => {});
       throw err;

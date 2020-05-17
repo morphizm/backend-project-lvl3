@@ -5,7 +5,7 @@ import pageLoader from '..';
 const program = new Command();
 
 program
-  .version('0.0.14')
+  .version('0.0.15')
   .description('Downoload files from web page')
   .option('--output <directory>', 'Output directory', process.cwd())
   .arguments('<pageUrl>')

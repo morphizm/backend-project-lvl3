@@ -9,12 +9,12 @@ export default (htmlData, pageUrl, outputDirPath) => {
     script: 'src',
     img: 'src',
   };
-  const tags = ['link', 'script', 'img'];
+  const tags = Object.keys(mapping);
 
-  const elementsRefs = _.flatten(tags.map((tag) => {
+  const elementsRefs = _.flatMap(tags, (tag) => {
     const tagRefs = $(tag).map((i, el) => $(el).attr(mapping[tag])).get();
     return tagRefs;
-  }));
+  });
 
   tags.forEach((tag) => {
     const tagAttr = mapping[tag];
